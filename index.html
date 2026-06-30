@@ -145,6 +145,26 @@
   .apoints li span{font-size:12.5px;color:var(--mut);font-weight:700;line-height:1.7}
   .ahow{padding-left:20px;font-size:13.5px;color:#4a423b;line-height:2}
   .ahow li{margin-bottom:3px}
+  .mcal{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px;box-shadow:var(--sh2);margin-bottom:12px}
+  .mchead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .mchead b{font-size:14px;font-weight:800}
+  .mchead button{border:none;background:#F6EFE6;color:var(--acc2);width:30px;height:30px;border-radius:9px;font-size:16px;cursor:pointer;font-family:inherit}
+  .mcrow,.mcgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+  .mcrow{margin-bottom:4px}
+  .mcdow{text-align:center;font-size:10px;color:var(--mut);font-weight:800}
+  .mcday{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink)}
+  .mcday.pad{pointer-events:none}
+  .mcday:hover{background:#FAF4EC}
+  .mcday.today{background:var(--soft);color:var(--acc2);font-weight:800}
+  .mcday.has{font-weight:800}
+  .mcn{line-height:1}
+  .mcdot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+  .mcdot.plan{background:var(--acc)} .mcdot.done{background:var(--green)}
+  .mclegend{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:10.5px;color:var(--mut);font-weight:700}
+  .mclegend span{display:flex;align-items:center;gap:5px}
+  .gapn{font-size:12px;color:#6a6058;font-weight:700;line-height:1.7;background:#FFF8F3;border:1px solid #F3DECF;border-radius:14px;padding:11px 13px;margin-bottom:14px}
+  .gapn b{color:var(--acc2)}
+  .gapn.warn{background:#FDEEE9;border-color:#F2C4B5;color:var(--acc2)}
   .row2{display:flex;gap:10px;margin-top:8px}
   .btn{flex:1;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer}
   .btn.go{background:var(--acc);color:#fff}.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
@@ -224,6 +244,7 @@
 const KEY='kotsukotsu_v3';
 const TODAY='2026-06-29'; // 月曜
 let tab='sched', editId=null, PHOTO='', TAGSEL=[], FMT='リール';
+let CALREF=new Date(2026,5,1);
 const REEL_TIPS=['縦型（9:16）で撮る','最初の3秒で“おっ”と思わせる','字幕（テロップ）を入れる','友達に送りたくなる／保存したくなる中身か'];
 function fmtIcon(f){return ({'リール':'🎬','カルーセル':'🖼','写真':'📷'})[f]||'';}
 function fmtBadge(f){return f?`<span class="fmtbadge">${fmtIcon(f)} ${f}</span>`:'';}
@@ -290,6 +311,33 @@ function renderDash(m){
 }
 let _rt;window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,160);});
 
+function moveCal(n){CALREF=new Date(CALREF.getFullYear(),CALREF.getMonth()+n,1);render();}
+function openPostOn(ds){openPost();document.getElementById('m_date').value=ds;}
+function dayTap(ds){const evs=store.posts.filter(p=>p.when.slice(0,10)===ds);if(evs.length===1)openPost(evs[0].id);else openPostOn(ds);}
+function drawMiniCal(){
+  const y=CALREF.getFullYear(),mo=CALREF.getMonth();
+  const first=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate(),dows=['日','月','火','水','木','金','土'];
+  let cells='';
+  for(let i=0;i<first;i++)cells+=`<div class="mcday pad"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=`${y}-${('0'+(mo+1)).slice(-2)}-${('0'+d).slice(-2)}`;
+    const evs=store.posts.filter(p=>p.when.slice(0,10)===ds),isToday=ds===TODAY;
+    const dot=evs.length?`<span class="mcdot ${evs.some(e=>e.posted)?'done':'plan'}"></span>`:'';
+    cells+=`<div class="mcday${isToday?' today':''}${evs.length?' has':''}" onclick="dayTap('${ds}')"><span class="mcn">${d}</span>${dot}</div>`;
+  }
+  return `<div class="mcal">
+    <div class="mchead"><button onclick="moveCal(-1)">‹</button><b>${y}年 ${mo+1}月</b><button onclick="moveCal(1)">›</button></div>
+    <div class="mcrow">${dows.map(d=>`<div class="mcdow">${d}</div>`).join('')}</div>
+    <div class="mcgrid">${cells}</div>
+    <div class="mclegend"><span><span class="mcdot plan"></span>予約済み</span><span><span class="mcdot done"></span>投稿済み</span><span class="optlab">日付をタップで予約・編集</span></div>
+  </div>`;
+}
+function gapNote(){
+  const up=store.posts.filter(p=>!p.posted&&p.when.slice(0,10)>=TODAY).sort((a,b)=>a.when<b.when?-1:1);
+  if(!up.length)return `<div class="gapn warn">⚠ この先の予約がありません。続けるために、まず1本入れましょう。</div>`;
+  const last=new Date(up[up.length-1].when);
+  return `<div class="gapn">この先の予約は<b>${up.length}件</b>。<b>${last.getMonth()+1}/${last.getDate()}</b>より先は、まだ予定がありません。抜けないように、続けて入れておきましょう。</div>`;
+}
 function schedBody(){
   const up=store.posts.filter(p=>!p.posted).sort((a,b)=>a.when<b.when?-1:1);
   const done=store.posts.filter(p=>p.posted).sort((a,b)=>a.when<b.when?1:-1);
@@ -299,6 +347,7 @@ function schedBody(){
       <div style="text-align:right"><div class="pace">${[0,1,2].map(i=>`<span class="dot ${i<wc?'on':''}"></span>`).join('')}</div><div class="sub" style="margin-top:5px">今週 ${wc}/${WEEK_GOAL}回</div></div>
     </div>
     <div class="keepmsg ${left?'go':'ok'}">${left?`あと${left}回で、今週もいつものペース。続けましょう。`:`今週のペース達成！この調子です。`}</div></div>`;
+  h+=drawMiniCal()+gapNote();
   if(next){h+=`<div class="next" onclick="openPost(${next.id})">
       <div class="ph" style="background-image:url('${next.img||''}')"></div>
       <div style="min-width:0;flex:1"><div class="lab">つぎの投稿</div><div class="ttl">${esc(next.theme||'（無題）')}</div>
