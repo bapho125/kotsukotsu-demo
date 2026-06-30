@@ -167,6 +167,10 @@
   .gapn{font-size:12px;color:#6a6058;font-weight:700;line-height:1.7;background:#FFF8F3;border:1px solid #F3DECF;border-radius:14px;padding:11px 13px;margin-bottom:14px}
   .gapn b{color:var(--acc2)}
   .gapn.warn{background:#FDEEE9;border-color:#F2C4B5;color:var(--acc2)}
+  .bkbtn{width:100%;background:#fff;border:1.5px solid var(--line);color:var(--acc2);font-weight:800;font-size:13px;font-family:inherit;padding:12px;border-radius:14px;cursor:pointer;margin-bottom:14px;box-shadow:var(--sh2)}
+  .bkbtn:active{transform:scale(.99)}
+  .bkprev{font-size:12.5px;color:#6a6058;font-weight:700;line-height:1.85;background:#FFF8F3;border:1px solid #F3DECF;border-radius:14px;padding:12px 14px;margin:4px 0 8px}
+  .bkprev b{color:var(--acc2)}
   .row2{display:flex;gap:10px;margin-top:8px}
   .btn{flex:1;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer}
   .btn.go{background:var(--acc);color:#fff}.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
@@ -246,6 +250,17 @@
     <div class="shsub">タップで編集できます。</div>
     <div id="dayList" style="margin-bottom:14px"></div>
     <button class="btn go" id="dayAdd" style="width:100%">＋ この日に投稿を追加</button>
+  </div>
+</div>
+<div class="ov" id="ovBulk">
+  <div class="sheet">
+    <h3>まとめて予約</h3>
+    <div class="shsub">続けるための枠を、まとめて先に押さえます。内容はあとで1本ずつ入れられます。</div>
+    <div class="f"><label>何本？</label><div class="chips" id="bk_count"></div></div>
+    <div class="f"><label>ペース</label><div class="chips" id="bk_pace"></div></div>
+    <div class="f"><label>いつから？</label><input type="date" id="bk_start" oninput="renderBulk()"></div>
+    <div class="bkprev" id="bk_prev"></div>
+    <div class="row2"><button class="btn ghost" onclick="closeBulk()">やめる</button><button class="btn go" onclick="saveBulk()">まとめて予約する</button></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -341,6 +356,32 @@ function openDaySheet(ds,evs){
   document.getElementById('ovDay').classList.add('show');
 }
 function closeDay(){document.getElementById('ovDay').classList.remove('show');}
+const BK={count:5,pace:3};
+function openBulk(){BK.count=5;BK.pace=3;document.getElementById('bk_start').value=TODAY;renderBulk();document.getElementById('ovBulk').classList.add('show');}
+function closeBulk(){document.getElementById('ovBulk').classList.remove('show');}
+function setBK(k,v){BK[k]=v;renderBulk();}
+function bulkDates(){
+  const gap=Math.max(1,Math.round(7/BK.pace)),taken=new Set(store.posts.map(p=>p.when.slice(0,10)));
+  const el=document.getElementById('bk_start'),out=[];let d=new Date(((el&&el.value)||TODAY)+'T00:00'),guard=0;
+  while(out.length<BK.count&&guard<300){
+    const ds=`${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}`;
+    if(taken.has(ds)){d.setDate(d.getDate()+1);guard++;continue;}
+    out.push(ds);taken.add(ds);d.setDate(d.getDate()+gap);guard++;
+  }
+  return out;
+}
+function renderBulk(){
+  document.getElementById('bk_count').innerHTML=[3,5,7,10].map(n=>`<button type="button" class="chip${BK.count===n?' best':''}" onclick="setBK('count',${n})">${n}本</button>`).join('');
+  document.getElementById('bk_pace').innerHTML=[2,3,4].map(n=>`<button type="button" class="chip${BK.pace===n?' best':''}" onclick="setBK('pace',${n})">週${n}回</button>`).join('');
+  const dates=bulkDates();
+  document.getElementById('bk_prev').innerHTML=dates.length?`<b>${dates.length}本</b>を、この日に入れます：<br>${dates.map(ds=>{const d=new Date(ds+'T00:00');return `${d.getMonth()+1}/${d.getDate()}`;}).join(' ・ ')}<br><span class="optlab">形式はリール・時間はお昼で入ります（あとで1本ずつ変更できます）</span>`:'日付を作れませんでした';
+}
+function saveBulk(){
+  const dates=bulkDates();if(!dates.length){toast('日付を作れませんでした');return;}
+  let id=Math.max(0,...store.posts.map(p=>p.id));
+  dates.forEach(ds=>{id++;store.posts.push({id,theme:'（内容はあとで）',fmt:'リール',cap:'',when:ds+'T12:00',posted:false,img:'',reach:0,saves:0,tags:[]});});
+  save();closeBulk();go('sched');toast(`${dates.length}本まとめて予約しました🌱 あとで内容を入れましょう`);
+}
 function drawMiniCal(){
   const y=CALREF.getFullYear(),mo=CALREF.getMonth();
   const first=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate(),dows=['日','月','火','水','木','金','土'];
@@ -374,7 +415,7 @@ function schedBody(){
       <div style="text-align:right"><div class="pace">${[0,1,2].map(i=>`<span class="dot ${i<wc?'on':''}"></span>`).join('')}</div><div class="sub" style="margin-top:5px">今週 ${wc}/${WEEK_GOAL}回</div></div>
     </div>
     <div class="keepmsg ${left?'go':'ok'}">${left?`あと${left}回で、今週もいつものペース。続けましょう。`:`今週のペース達成！この調子です。`}</div></div>`;
-  h+=drawMiniCal()+gapNote();
+  h+=drawMiniCal()+gapNote()+`<button class="bkbtn" onclick="openBulk()">📅 まとめて予約（続ける枠を先に押さえる）</button>`;
   if(next){h+=`<div class="next" onclick="openPost(${next.id})">
       <div class="ph" style="background-image:url('${next.img||''}')"></div>
       <div style="min-width:0;flex:1"><div class="lab">つぎの投稿</div><div class="ttl">${esc(next.theme||'（無題）')}</div>
@@ -552,6 +593,7 @@ function savePost(){
 let tT;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2000);}
 document.getElementById('ov').addEventListener('click',e=>{if(e.target.id==='ov')closeOv();});
 document.getElementById('ovDay').addEventListener('click',e=>{if(e.target.id==='ovDay')closeDay();});
+document.getElementById('ovBulk').addEventListener('click',e=>{if(e.target.id==='ovBulk')closeBulk();});
 render();
 </script>
 </body>
