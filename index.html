@@ -158,6 +158,8 @@
   .mcday.today{background:var(--soft);color:var(--acc2);font-weight:800}
   .mcday.has{font-weight:800}
   .mcn{line-height:1}
+  .mcdots{display:flex;gap:2px;align-items:center;justify-content:center;min-height:6px}
+  .mcmore{font-size:9px;font-weight:800;color:var(--mut);line-height:1}
   .mcdot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
   .mcdot.plan{background:var(--acc)} .mcdot.done{background:var(--green)}
   .mclegend{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:10.5px;color:var(--mut);font-weight:700}
@@ -238,6 +240,14 @@
     </div>
   </div>
 </div>
+<div class="ov" id="ovDay">
+  <div class="sheet">
+    <h3 id="dayTitle">投稿</h3>
+    <div class="shsub">タップで編集できます。</div>
+    <div id="dayList" style="margin-bottom:14px"></div>
+    <button class="btn go" id="dayAdd" style="width:100%">＋ この日に投稿を追加</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -313,7 +323,24 @@ let _rt;window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(r
 
 function moveCal(n){CALREF=new Date(CALREF.getFullYear(),CALREF.getMonth()+n,1);render();}
 function openPostOn(ds){openPost();document.getElementById('m_date').value=ds;}
-function dayTap(ds){const evs=store.posts.filter(p=>p.when.slice(0,10)===ds);if(evs.length===1)openPost(evs[0].id);else openPostOn(ds);}
+function dayTap(ds){
+  const evs=store.posts.filter(p=>p.when.slice(0,10)===ds).sort((a,b)=>a.when<b.when?-1:1);
+  if(!evs.length){openPostOn(ds);return;}
+  if(evs.length===1){openPost(evs[0].id);return;}
+  openDaySheet(ds,evs);
+}
+function openDaySheet(ds,evs){
+  const d=new Date(ds+'T00:00');
+  document.getElementById('dayTitle').textContent=`${d.getMonth()+1}月${d.getDate()}日の投稿（${evs.length}件）`;
+  document.getElementById('dayList').innerHTML=evs.map(p=>`<div class="item" onclick="closeDay();openPost(${p.id})">
+      <div class="ph" style="background-image:url('${p.img||''}')"></div>
+      <div style="min-width:0;flex:1"><div class="t">${esc(p.theme||'（無題）')}</div>
+        <div class="m">${fmtBadge(p.fmt)}<span class="nw">${whenLabel(p.when)}</span><span class="${p.posted?'done-badge':'pill'}">${p.posted?fmtNum(p.reach)+'人に届きました':'予約済み'}</span></div></div>
+    </div>`).join('');
+  document.getElementById('dayAdd').onclick=()=>{closeDay();openPostOn(ds);};
+  document.getElementById('ovDay').classList.add('show');
+}
+function closeDay(){document.getElementById('ovDay').classList.remove('show');}
 function drawMiniCal(){
   const y=CALREF.getFullYear(),mo=CALREF.getMonth();
   const first=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate(),dows=['日','月','火','水','木','金','土'];
@@ -322,8 +349,8 @@ function drawMiniCal(){
   for(let d=1;d<=days;d++){
     const ds=`${y}-${('0'+(mo+1)).slice(-2)}-${('0'+d).slice(-2)}`;
     const evs=store.posts.filter(p=>p.when.slice(0,10)===ds),isToday=ds===TODAY;
-    const dot=evs.length?`<span class="mcdot ${evs.some(e=>e.posted)?'done':'plan'}"></span>`:'';
-    cells+=`<div class="mcday${isToday?' today':''}${evs.length?' has':''}" onclick="dayTap('${ds}')"><span class="mcn">${d}</span>${dot}</div>`;
+    const dots=evs.length?`<span class="mcdots">${evs.slice(0,3).map(e=>`<span class="mcdot ${e.posted?'done':'plan'}"></span>`).join('')}${evs.length>3?'<span class="mcmore">+</span>':''}</span>`:'';
+    cells+=`<div class="mcday${isToday?' today':''}${evs.length?' has':''}" onclick="dayTap('${ds}')"><span class="mcn">${d}</span>${dots}</div>`;
   }
   return `<div class="mcal">
     <div class="mchead"><button onclick="moveCal(-1)">‹</button><b>${y}年 ${mo+1}月</b><button onclick="moveCal(1)">›</button></div>
@@ -524,6 +551,7 @@ function savePost(){
 }
 let tT;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2000);}
 document.getElementById('ov').addEventListener('click',e=>{if(e.target.id==='ov')closeOv();});
+document.getElementById('ovDay').addEventListener('click',e=>{if(e.target.id==='ovDay')closeDay();});
 render();
 </script>
 </body>
