@@ -125,6 +125,26 @@
   .rcnote{font-size:11px;color:var(--mut);font-weight:700;line-height:1.6;margin-top:6px;border-top:1px dashed #EAD7C8;padding-top:8px}
   .fmtbadge{font-size:10.5px;font-weight:800;color:var(--acc2);background:var(--soft);padding:2px 7px;border-radius:999px;white-space:nowrap}
   .tagcount{font-size:11px;color:var(--mut);font-weight:800;text-align:right;margin-bottom:6px}
+  .optlab{font-weight:700;color:var(--mut);font-size:10.5px}
+  .chartwrap{position:relative;cursor:crosshair}
+  .cguide{position:absolute;top:0;bottom:0;width:2px;background:var(--acc);opacity:.45;display:none;pointer-events:none;transform:translateX(-1px)}
+  .ctip{position:absolute;top:-6px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:10px;padding:6px 11px;font-size:11px;font-weight:700;display:none;pointer-events:none;white-space:nowrap;text-align:center;line-height:1.35;box-shadow:var(--sh2);z-index:5}
+  .ctip b{font-size:14px;display:block}.ctip span{opacity:.82;font-size:10px}
+  .mgain{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 15px;box-shadow:var(--sh2);margin-top:12px}
+  .mglab{font-size:12px;color:var(--mut);font-weight:800;margin-bottom:10px}
+  .mgchips{display:flex;gap:10px;flex-wrap:wrap}
+  .mgc{flex:1;min-width:62px;text-align:center;background:var(--greenbg);border-radius:12px;padding:9px 6px}
+  .mgc b{font-size:17px;color:var(--green);font-weight:800;display:block;line-height:1}
+  .mgc span{font-size:11px;color:var(--mut);font-weight:800}
+  .abs{margin-top:22px}
+  .abk{font-size:13px;font-weight:800;color:var(--acc2);margin-bottom:9px;letter-spacing:.02em}
+  .ap{font-size:13.5px;color:#4a423b;line-height:1.9}
+  .apoints{list-style:none;display:flex;flex-direction:column;gap:11px}
+  .apoints li{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 15px;box-shadow:var(--sh2)}
+  .apoints li b{display:block;font-size:14px;margin-bottom:3px}
+  .apoints li span{font-size:12.5px;color:var(--mut);font-weight:700;line-height:1.7}
+  .ahow{padding-left:20px;font-size:13.5px;color:#4a423b;line-height:2}
+  .ahow li{margin-bottom:3px}
   .row2{display:flex;gap:10px;margin-top:8px}
   .btn{flex:1;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer}
   .btn.go{background:var(--acc);color:#fff}.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
@@ -147,6 +167,7 @@
     .dcol .sechead:first-of-type{margin-top:6px}
     .ov{align-items:center}
     .sheet{border-radius:24px;max-width:480px;margin:0 16px;max-height:88vh}
+    .dabout{max-width:760px;margin:0 auto}
   }
 </style>
 </head>
@@ -156,6 +177,7 @@
   <div class="tabbar">
     <button class="tab on" data-t="sched" onclick="go('sched')"><span class="ic">📅</span>予約</button>
     <button class="tab" data-t="grow" onclick="go('grow')"><span class="ic">🌱</span>のび</button>
+    <button class="tab" data-t="about" onclick="go('about')"><span class="ic">ℹ️</span>このツール</button>
   </div>
 </div>
 <button class="addbtn" id="addbtn" onclick="openPost()"><span style="font-size:18px">＋</span>投稿を予約する</button>
@@ -250,7 +272,10 @@ function thisWeekCount(){const wk=weekKey(TODAY);return store.posts.filter(p=>we
 function go(t){tab=t;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   document.getElementById('addbtn').style.display=t==='sched'?'flex':'none';render();}
 function isWide(){return window.innerWidth>=900;}
-function render(){const m=document.getElementById('scr');if(isWide())renderDash(m);else if(tab==='sched')renderSched(m);else renderGrow(m);}
+function render(){const m=document.getElementById('scr');
+  if(tab==='about'){renderAbout(m);return;}
+  if(isWide())renderDash(m);else if(tab==='sched')renderSched(m);else renderGrow(m);
+}
 function renderDash(m){
   m.innerHTML=`<div class="view">
     <div class="dtop"><div class="top" style="margin:0"><div class="av" style="background-image:url('${store.shop.avatar}')"></div>
@@ -260,6 +285,7 @@ function renderDash(m){
       <div class="dcol"><div class="dlabel">📅 予約・続ける</div>${schedBody()}</div>
       <div class="dcol"><div class="dlabel">🌱 のび・見つけてもらう</div>${growBody()}</div>
     </div>
+    <div class="dabout"><div class="dlabel" style="margin-top:30px">ℹ️ このツールについて</div>${aboutBody()}</div>
     <div class="demo">これはデモ（サンプル）です。データはすべて架空で、実際の投稿は行いません。「コツコツ」＝続けられて、新しい人に見つけてもらえる、お店のSNSの相棒。御社向けに作ります。— Karakuri</div></div>`;
 }
 let _rt;window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,160);});
@@ -312,7 +338,9 @@ function growBody(){
       <div class="mini"><div class="me">👀</div><div class="mn">${fmtNum(newReach)}</div><div class="ml">新しく届いた人<br>（フォロワー以外）</div></div>
       <div class="mini"><div class="me">🔥</div><div class="mn">${st}週</div><div class="ml">連続で投稿<br>続いています</div></div>
     </div>
-    <div class="chartcard"><div class="lab">フォロワーのうごき</div>${lineChart(s)}</div>
+    <div class="chartcard"><div class="lab">フォロワーのうごき <span class="optlab">— グラフに触れると日付ごとの人数</span></div>
+      <div class="chartwrap" id="chartwrap" onmousemove="chartHover(event)" onmouseleave="chartHide()" ontouchstart="chartHover(event)" ontouchmove="chartHover(event)">${lineChart(s)}<div class="cguide" id="cguide"></div><div class="ctip" id="ctip"></div></div></div>
+    ${monthGainRow()}
     <div class="sechead">よく見られた投稿</div>`;
   h+=top.map((p,i)=>`<div class="item" onclick="openPost(${p.id})">
       <div class="topimg" style="background-image:url('${p.img||''}')"><span class="rank">${i+1}</span></div>
@@ -341,6 +369,49 @@ function lineChart(s){
     <polygon points="${pad},${H-pad} ${pts} ${W-pad},${H-pad}" fill="url(#g)"/>
     <polyline points="${pts}" fill="none" stroke="#E0795E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="${x(vals.length-1).toFixed(1)}" cy="${y(vals[vals.length-1]).toFixed(1)}" r="4.5" fill="#C85B43"/></svg>`;
+}
+function chartHover(e){
+  const wrap=document.getElementById('chartwrap');if(!wrap)return;
+  const r=wrap.getBoundingClientRect(),s=store.snaps,n=s.length,W=380,pad=8;
+  const cx=((e.touches&&e.touches[0]?e.touches[0].clientX:e.clientX)-r.left);
+  let frac=(cx/r.width*W-pad)/(W-2*pad);frac=Math.max(0,Math.min(1,frac));
+  const i=Math.round(frac*(n-1)),xPx=(pad+i*(W-2*pad)/(n-1))/W*r.width;
+  const g=document.getElementById('cguide'),t=document.getElementById('ctip');
+  g.style.left=xPx+'px';g.style.display='block';
+  const d=new Date(s[i].d+'T00:00'),dl=i>0?s[i].foll-s[i-1].foll:0;
+  t.innerHTML=`<b>${fmtNum(s[i].foll)}人</b><span>${d.getMonth()+1}/${d.getDate()}${i>0?` ・前週+${fmtNum(dl)}`:''}</span>`;
+  t.style.left=Math.max(46,Math.min(r.width-46,xPx))+'px';t.style.display='block';
+}
+function chartHide(){const g=document.getElementById('cguide'),t=document.getElementById('ctip');if(g)g.style.display='none';if(t)t.style.display='none';}
+function monthlyGains(){const s=store.snaps,m={},ord=[];for(let i=1;i<s.length;i++){const k=s[i].d.slice(0,7);if(!(k in m)){m[k]=0;ord.push(k);}m[k]+=s[i].foll-s[i-1].foll;}return ord.map(k=>({mo:+k.split('-')[1],v:m[k]}));}
+function monthGainRow(){const g=monthlyGains();if(!g.length)return'';return `<div class="mgain"><div class="mglab">月ごとの伸び</div><div class="mgchips">${g.map(x=>`<div class="mgc"><b>+${fmtNum(x.v)}</b><span>${x.mo}月</span></div>`).join('')}</div></div>`;}
+function aboutBody(){
+  return `
+  <section class="abs"><div class="abk">これは何？</div>
+    <p class="ap">Karakuriが作った、<b>お店のSNS（Instagram）運用ツール</b>のサンプルです。表示データは架空で、実際の投稿はしません。「こういうものを御社向けに作れます」を、触って確かめてもらうためのデモです。</p></section>
+  <section class="abs"><div class="abk">どんな人向け？</div>
+    <p class="ap">自分でInstagramを運用する、<b>店・サロン・クリニックのオーナー</b>。「忙しくて続かない」「何を出せばいいか分からない」「伸びてるのか分からない」——そんな人が、迷わず続けられるように作りました。</p></section>
+  <section class="abs"><div class="abk">3つのポイント</div>
+    <ol class="apoints">
+      <li><b>続けられる</b><span>連続記録と今週のペースで、投稿が習慣に。「続ける」が一番効く（実データで実証）。</span></li>
+      <li><b>リールを軸に</b><span>新しいお客さんに一番届くのはリール。形式選びと「伸びるコツ」で背中を押します。</span></li>
+      <li><b>のびが分かる</b><span>フォロワーの動き・よく届いた投稿・月ごとの伸びをひと目で。グラフに触れると日付ごとの人数も。</span></li>
+    </ol></section>
+  <section class="abs"><div class="abk">使い方</div>
+    <ol class="ahow">
+      <li>「<b>予約</b>」で、形式（リール推奨）と写真・本文を入れて予約。</li>
+      <li>「<b>のび</b>」で、伸びと「よく届いた投稿」を確認。</li>
+      <li>「<b>リールを1本予約する</b>」で、次の一手をワンタップ。</li>
+    </ol></section>
+  <section class="abs"><div class="abk">御社向けに作ります</div>
+    <p class="ap">これはSaaS（既製品）ではありません。御社の業種・運用に合わせてゼロから開発します。まずは小さく、ここから。<br><span style="color:var(--mut)">— Karakuri（AI活用の受託開発）</span></p></section>`;
+}
+function renderAbout(m){
+  m.innerHTML=`<div class="view">
+    <div class="top"><div class="av" style="background-image:url('${store.shop.avatar}')"></div>
+      <div><div class="hi">このツールについて</div><div class="shop">コツコツ</div></div></div>
+    ${aboutBody()}
+    <div class="demo">これはデモ（サンプル）です。御社向けに作ります。— Karakuri</div></div>`;
 }
 function quickReel(){go('sched');openPost();}
 
