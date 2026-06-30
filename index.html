@@ -113,6 +113,18 @@
   .meter.low .mt{color:var(--mut)} .meter.mid .mt{color:var(--acc2)} .meter.good .mt{color:var(--green)}
   .hint{font-size:11.5px;color:var(--mut);font-weight:700;line-height:1.6;margin-top:8px;background:var(--goldbg);border-radius:12px;padding:10px 12px}
   .hint b{color:var(--acc2)}
+  .fmtsel{display:flex;gap:8px;flex-wrap:wrap}
+  .fmtopt{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap;background:#fff;border:1.5px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;padding:11px 4px;border-radius:14px;cursor:pointer;font-family:inherit}
+  .fmtopt.on{border-color:var(--acc);background:var(--soft);color:var(--acc2)}
+  .fmtopt .rec{font-size:9px;background:var(--acc);color:#fff;padding:1px 6px;border-radius:999px;margin-left:2px}
+  .fmtopt.on .rec{background:var(--acc2)}
+  .reelchk{background:#FFF8F3;border:1px solid #F3DECF;border-radius:14px;padding:13px;margin-top:11px}
+  .rchead{font-size:12.5px;font-weight:800;color:var(--acc2);margin-bottom:9px}
+  .rcrow{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;font-weight:700;margin-bottom:8px;cursor:pointer}
+  .rcck{width:18px;height:18px;accent-color:var(--acc);flex-shrink:0;margin-top:1px}
+  .rcnote{font-size:11px;color:var(--mut);font-weight:700;line-height:1.6;margin-top:6px;border-top:1px dashed #EAD7C8;padding-top:8px}
+  .fmtbadge{font-size:10.5px;font-weight:800;color:var(--acc2);background:var(--soft);padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .tagcount{font-size:11px;color:var(--mut);font-weight:800;text-align:right;margin-bottom:6px}
   .row2{display:flex;gap:10px;margin-top:8px}
   .btn{flex:1;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer}
   .btn.go{background:var(--acc);color:#fff}.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
@@ -151,24 +163,32 @@
 <div class="ov" id="ov">
   <div class="sheet">
     <h3 id="shTitle">投稿を予約</h3>
-    <div class="shsub">写真と本文を入れて、ハッシュタグはタップで足すだけ。</div>
-    <div class="f"><label>写真</label>
-      <input type="file" id="m_file" accept="image/*" onchange="pickPhoto(event)" style="display:none">
+    <div class="shsub">リール（動画）を軸に。形式を選んで、本文を入れるだけ。</div>
+    <div class="f"><label>形式 <span class="opt">— 新しいお客さんに一番届くのは「リール」です</span></label>
+      <div class="fmtsel" id="m_fmt">
+        <button type="button" class="fmtopt on" data-v="リール" onclick="selFmt(this)">🎬 リール<span class="rec">おすすめ</span></button>
+        <button type="button" class="fmtopt" data-v="カルーセル" onclick="selFmt(this)">🖼 カルーセル</button>
+        <button type="button" class="fmtopt" data-v="写真" onclick="selFmt(this)">📷 写真</button>
+      </div>
+      <div id="m_reelchk"></div>
+    </div>
+    <div class="f"><label>写真・動画 <span class="opt">（リールは動画）</span></label>
+      <input type="file" id="m_file" accept="image/*,video/*" onchange="pickPhoto(event)" style="display:none">
       <div id="m_phwrap"></div>
     </div>
     <div class="f"><label>本文</label><textarea id="m_cap" placeholder="お客さまに伝えたいこと"></textarea></div>
     <div class="f">
-      <label>ハッシュタグ <span class="opt">— タップで足す。新しい人に見つけてもらう入口です</span></label>
+      <label>ハッシュタグ <span class="opt">（任意・補助・5個まで）</span></label>
       <div id="m_tags"></div>
-      <div class="meter" id="m_meter"></div>
-      <div class="hint">大きいタグだけだと埋もれます。<b>エリア＋小さめのタグ</b>が、近くの新しい人に見つけてもらう近道です。</div>
+      <div class="hint">ハッシュタグは“補助”です。新しい人に届くかは、<b>リールと本文の言葉</b>で決まります。地元のタグ（例 #西荻窪カフェ）を入れておけば十分。</div>
     </div>
-    <div class="f"><label>お店のエリア <span class="opt">（任意・近くの人に届きます）</span></label>
+    <div class="f"><label>お店のエリア <span class="opt">（地元タグに使います）</span></label>
       <input id="m_area" placeholder="例）西荻窪" oninput="renderTags()"></div>
     <div class="f"><label>タイトル <span class="opt">（任意・自分用メモ）</span></label><input id="m_theme" placeholder="例）今週のおすすめ"></div>
     <div class="f"><label>いつ出す？</label>
       <div class="frow"><input type="date" id="m_date"><input type="time" id="m_time" value="12:00"></div>
       <div class="chips" id="m_chips" style="margin-top:11px"></div>
+      <div class="note">※ 時間はあくまで目安。<b>あなたのインサイトの「フォロワーがいる時間」</b>が一番正確です。</div>
     </div>
     <div class="row2">
       <button class="btn ghost" onclick="closeOv()">やめる</button>
@@ -179,9 +199,12 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const KEY='kotsukotsu_v2';
+const KEY='kotsukotsu_v3';
 const TODAY='2026-06-29'; // 月曜
-let tab='sched', editId=null, PHOTO='', TAGSEL=[];
+let tab='sched', editId=null, PHOTO='', TAGSEL=[], FMT='リール';
+const REEL_TIPS=['縦型（9:16）で撮る','最初の3秒で“おっ”と思わせる','字幕（テロップ）を入れる','友達に送りたくなる／保存したくなる中身か'];
+function fmtIcon(f){return ({'リール':'🎬','カルーセル':'🖼','写真':'📷'})[f]||'';}
+function fmtBadge(f){return f?`<span class="fmtbadge">${fmtIcon(f)} ${f}</span>`:'';}
 const img=u=>`https://images.unsplash.com/${u}?w=320&q=80`;
 const TAGS_BASE=['#カフェ','#コーヒー','#カフェ巡り'];
 const TAGS_THEME=['#おうちカフェ','#コーヒーのある暮らし','#カフェ好きな人と繋がりたい','#今日のおやつ','#リラックスタイム'];
@@ -194,16 +217,16 @@ function load(){
   return {
     shop:{name:'まちかど珈琲',handle:'@machikado.coffee',area:'西荻窪',avatar:img('photo-1447933601403-0c6688de566e')},
     posts:[
-      {id:1,theme:'朝のモーニング',cap:'今日も焼きたてです',when:'2026-05-08T08:00',posted:true,img:img('photo-1509042239860-f550ce710b93'),reach:980,saves:42,tags:['#カフェ','#西荻窪カフェ']},
-      {id:2,theme:'新作ラテ',cap:'季節限定、はじめました。',when:'2026-05-14T12:00',posted:true,img:img('photo-1461023058943-07fcbe16d735'),reach:2100,saves:160,tags:['#カフェ','#おうちカフェ','#西荻窪カフェ']},
-      {id:3,theme:'店内の様子',cap:'のんびりできる席、あります。',when:'2026-05-20T18:00',posted:true,img:img('photo-1554118811-1e0d58224f24'),reach:1250,saves:64,tags:['#西荻窪カフェ']},
-      {id:4,theme:'焼き菓子',cap:'お持ち帰りにどうぞ。',when:'2026-05-27T12:00',posted:true,img:img('photo-1521017432531-fbd92d768814'),reach:1780,saves:120,tags:['#今日のおやつ','#西荻窪グルメ']},
-      {id:5,theme:'お昼のセット',cap:'コーヒーとセットでお得です。',when:'2026-06-03T12:00',posted:true,img:img('photo-1442512595331-e89e73853f31'),reach:2750,saves:210,tags:['#西荻窪ランチ','#カフェ巡り']},
-      {id:6,theme:'夕方のひととき',cap:'夜まで開けてます。',when:'2026-06-11T18:00',posted:true,img:img('photo-1559496417-e7f25cb247f3'),reach:1400,saves:78,tags:['#西荻窪カフェ']},
-      {id:7,theme:'クロワッサン',cap:'数量限定。お早めに。',when:'2026-06-18T08:00',posted:true,img:img('photo-1555507036-ab1f4038808a'),reach:3200,saves:290,tags:['#今日のおやつ','#西荻窪グルメ','#コーヒーのある暮らし']},
-      {id:8,theme:'雨の日のひとやすみ',cap:'こんな日は、ゆっくりと。',when:'2026-06-24T12:00',posted:true,img:img('photo-1442512595331-e89e73853f31'),reach:1650,saves:95,tags:['#西荻窪カフェ','#おうちカフェ']},
-      {id:9,theme:'今週のおすすめ',cap:'',when:'2026-06-30T12:00',posted:false,img:img('photo-1495474472287-4d71bcdd2085'),reach:0,saves:0,tags:[]},
-      {id:10,theme:'七夕の限定メニュー',cap:'',when:'2026-07-03T18:00',posted:false,img:img('photo-1461023058943-07fcbe16d735'),reach:0,saves:0,tags:[]},
+      {id:1,theme:'朝のモーニング',fmt:'写真',cap:'今日も焼きたてです',when:'2026-05-08T08:00',posted:true,img:img('photo-1509042239860-f550ce710b93'),reach:980,saves:42,tags:['#西荻窪カフェ']},
+      {id:2,theme:'新作ラテの作り方',fmt:'リール',cap:'季節限定、できるまで。',when:'2026-05-14T12:00',posted:true,img:img('photo-1461023058943-07fcbe16d735'),reach:2100,saves:160,tags:['#西荻窪カフェ']},
+      {id:3,theme:'店内の様子',fmt:'写真',cap:'のんびりできる席、あります。',when:'2026-05-20T18:00',posted:true,img:img('photo-1554118811-1e0d58224f24'),reach:1250,saves:64,tags:['#西荻窪カフェ']},
+      {id:4,theme:'焼き菓子3種',fmt:'カルーセル',cap:'お持ち帰りにどうぞ。',when:'2026-05-27T12:00',posted:true,img:img('photo-1521017432531-fbd92d768814'),reach:1780,saves:120,tags:['#西荻窪グルメ']},
+      {id:5,theme:'お昼のセット紹介',fmt:'リール',cap:'コーヒーとセットでお得です。',when:'2026-06-03T12:00',posted:true,img:img('photo-1442512595331-e89e73853f31'),reach:2750,saves:210,tags:['#西荻窪ランチ']},
+      {id:6,theme:'夕方のひととき',fmt:'写真',cap:'夜まで開けてます。',when:'2026-06-11T18:00',posted:true,img:img('photo-1559496417-e7f25cb247f3'),reach:1400,saves:78,tags:['#西荻窪カフェ']},
+      {id:7,theme:'クロワッサンができるまで',fmt:'リール',cap:'数量限定。お早めに。',when:'2026-06-18T08:00',posted:true,img:img('photo-1555507036-ab1f4038808a'),reach:3200,saves:290,tags:['#西荻窪グルメ']},
+      {id:8,theme:'雨の日のひとやすみ',fmt:'カルーセル',cap:'こんな日は、ゆっくりと。',when:'2026-06-24T12:00',posted:true,img:img('photo-1442512595331-e89e73853f31'),reach:1650,saves:95,tags:['#西荻窪カフェ']},
+      {id:9,theme:'今週のおすすめ',fmt:'リール',cap:'',when:'2026-06-30T12:00',posted:false,img:img('photo-1495474472287-4d71bcdd2085'),reach:0,saves:0,tags:[]},
+      {id:10,theme:'七夕の限定メニュー',fmt:'リール',cap:'',when:'2026-07-03T18:00',posted:false,img:img('photo-1461023058943-07fcbe16d735'),reach:0,saves:0,tags:[]},
     ],
     snaps:[
       {d:'2026-05-04',foll:1062},{d:'2026-05-11',foll:1088},{d:'2026-05-18',foll:1095},
@@ -273,7 +296,7 @@ function itemRow(p,isDone){
   return `<div class="item" onclick="openPost(${p.id})">
     <div class="ph" style="background-image:url('${p.img||''}')"></div>
     <div style="min-width:0;flex:1"><div class="t">${esc(p.theme||'（無題）')}</div>
-      <div class="m"><span class="nw">${whenLabel(p.when)}</span>${isDone?`<span class="done-badge">${fmtNum(p.reach)}人に届きました</span>`:`<span class="nw" style="color:var(--acc2)">${dayWord(p.when)}</span>`}</div></div>
+      <div class="m">${fmtBadge(p.fmt)}<span class="nw">${whenLabel(p.when)}</span>${isDone?`<span class="done-badge">${fmtNum(p.reach)}人に届きました</span>`:`<span class="nw" style="color:var(--acc2)">${dayWord(p.when)}</span>`}</div></div>
   </div>`;
 }
 
@@ -295,11 +318,11 @@ function growBody(){
       <div class="topimg" style="background-image:url('${p.img||''}')"><span class="rank">${i+1}</span></div>
       <div style="min-width:0;flex:1"><div class="t">${esc(p.theme||'（無題）')}</div>
         <div class="seen"><b>${fmtNum(p.reach)}</b>人に見られました</div>
-        <div class="m"><span class="nw">保存 ${fmtNum(p.saves)}</span><span class="nw">${whenLabel(p.when)}</span></div></div>
+        <div class="m">${fmtBadge(p.fmt)}<span class="nw">保存 ${fmtNum(p.saves)}</span><span class="nw">${whenLabel(p.when)}</span></div></div>
     </div>`).join('');
-  const bestT=top.length?timeWord(new Date(top[0].when).getHours()):'おひる';
-  h+=`<div class="insight"><span class="e">🌱</span> 「${bestT}」の投稿が、よく見られています。次もその時間に出してみましょう。
-    <button class="actbtn" onclick="quickFrom('${bestT}')">「${bestT}」にもう1本、予約する →</button></div>`;
+  const reelTop=top.filter(p=>p.fmt==='リール').length;
+  h+=`<div class="insight"><span class="e">🎬</span> よく届いた投稿は<b>リール</b>が中心です（上位${top.length}本中${reelTop}本）。新しいお客さんに一番届くのはリール。次もリールでいきましょう。
+    <button class="actbtn" onclick="quickReel()">リールを1本、予約する →</button></div>`;
   return h;
 }
 function renderGrow(m){
@@ -319,26 +342,27 @@ function lineChart(s){
     <polyline points="${pts}" fill="none" stroke="#E0795E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="${x(vals.length-1).toFixed(1)}" cy="${y(vals[vals.length-1]).toFixed(1)}" r="4.5" fill="#C85B43"/></svg>`;
 }
-function quickFrom(t){const time=t==='あさ'?'08:00':t==='ゆうがた'?'18:00':t==='よる'?'21:00':'12:00';go('sched');openPost();document.getElementById('m_time').value=time;document.getElementById('m_chips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('best',c.textContent.includes(time)));}
+function quickReel(){go('sched');openPost();}
 
 /* ---- tags / discoverability ---- */
 function areaTags(){const a=(document.getElementById('m_area')?.value||store.shop.area||'').trim();return a?[`#${a}カフェ`,`#${a}ランチ`,`#${a}グルメ`]:[];}
-function toggleTag(t){const i=TAGSEL.indexOf(t);i<0?TAGSEL.push(t):TAGSEL.splice(i,1);renderTags();}
+function toggleTag(t){const i=TAGSEL.indexOf(t);if(i<0){if(TAGSEL.length>=5){toast('ハッシュタグは5個までです');return;}TAGSEL.push(t);}else TAGSEL.splice(i,1);renderTags();}
 function renderTags(){
   const area=areaTags();
   const grp=(lab,badge,arr)=>arr.length?`<div class="taggrp"><div class="taglab">${lab}${badge?`<span class="b">${badge}</span>`:''}</div><div class="chips">${arr.map(t=>`<button type="button" class="tag${TAGSEL.includes(t)?' sel':''}" onclick="toggleTag('${t}')">${t}</button>`).join('')}</div></div>`:'';
   document.getElementById('m_tags').innerHTML=
-    grp('お店のエリア','見つけてもらいやすい',area)+
+    `<div class="tagcount">${TAGSEL.length}/5</div>`+
+    grp('地元','おすすめ',area)+
     grp('テーマ','',TAGS_THEME)+
-    grp('定番','母数が大きい',TAGS_BASE);
-  // meter
-  const hasArea=TAGSEL.some(t=>area.includes(t)),n=TAGSEL.length;
-  let lv,ic,mt,ms;
-  if(n>=3&&hasArea){lv='good';ic='✨';mt='新しい人に届きやすい！';ms=`タグ${n}個・エリアタグ入り`;}
-  else if(n>=1){lv='mid';ic='🌱';mt='もう少し';ms=hasArea?'小さめのタグも足すと届きます':'エリアのタグも足すと、近くの人に届きます';}
-  else{lv='low';ic='💡';mt='タグを足しましょう';ms='新しい人に見つけてもらう入口です';}
-  document.getElementById('m_meter').className='meter '+lv;
-  document.getElementById('m_meter').innerHTML=`<span class="ic">${ic}</span><div><div class="mt">${mt}</div><div class="ms">${ms}</div></div>`;
+    grp('定番','埋もれやすい',TAGS_BASE);
+}
+function selFmt(b){FMT=b.dataset.v;document.querySelectorAll('#m_fmt .fmtopt').forEach(x=>x.classList.toggle('on',x===b));renderReelChk();}
+function renderReelChk(){
+  const el=document.getElementById('m_reelchk');if(!el)return;
+  if(FMT!=='リール'){el.innerHTML='';return;}
+  el.innerHTML=`<div class="reelchk"><div class="rchead">🎬 リールが伸びるコツ</div>
+    ${REEL_TIPS.map(t=>`<label class="rcrow"><input type="checkbox" class="rcck"><span>${t}</span></label>`).join('')}
+    <div class="rcnote">※チェックは目安。「友達に送りたくなる」中身が、新しい人に届く一番の決め手です（Instagram公式）。</div></div>`;
 }
 
 /* ---- photo ---- */
@@ -353,7 +377,7 @@ function pickPhoto(e){const f=e.target.files[0];e.target.value='';if(!f)return;
 /* ---- create / edit ---- */
 function openPost(id){
   const p=id?store.posts.find(x=>x.id===id):null;
-  editId=p?p.id:null;TAGSEL=p&&p.tags?p.tags.slice():[];
+  editId=p?p.id:null;TAGSEL=p&&p.tags?p.tags.slice():[];FMT=p&&p.fmt?p.fmt:'リール';
   document.getElementById('shTitle').textContent=p?'投稿をなおす':'投稿を予約';
   document.getElementById('shSave').textContent=p?'保存する':'予約する';
   document.getElementById('m_theme').value=p?(p.theme||''):'';
@@ -362,6 +386,7 @@ function openPost(id){
   if(p){const d=new Date(p.when);document.getElementById('m_date').value=`${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}`;document.getElementById('m_time').value=`${('0'+d.getHours()).slice(-2)}:${('0'+d.getMinutes()).slice(-2)}`;}
   else{document.getElementById('m_date').value=TODAY;document.getElementById('m_time').value='12:00';}
   setPhoto(p?(p.img||''):'');renderTags();
+  document.querySelectorAll('#m_fmt .fmtopt').forEach(x=>x.classList.toggle('on',x.dataset.v===FMT));renderReelChk();
   document.getElementById('m_chips').innerHTML=[['あさ','08:00'],['おひる','12:00'],['ゆうがた','18:00'],['よる','21:00']]
     .map(c=>`<button type="button" class="chip${c[1]==='12:00'?' best':''}" onclick="document.getElementById('m_time').value='${c[1]}'">${c[0]} ${c[1]}</button>`).join('');
   document.getElementById('ov').classList.add('show');
@@ -372,9 +397,9 @@ function savePost(){
   const cap=document.getElementById('m_cap').value;
   const when=document.getElementById('m_date').value+'T'+document.getElementById('m_time').value;
   const area=document.getElementById('m_area').value.trim();if(area)store.shop.area=area;
-  if(editId){const p=store.posts.find(x=>x.id===editId);if(p){p.theme=theme;p.cap=cap;p.when=when;p.img=PHOTO;p.tags=TAGSEL.slice();}save();closeOv();render();toast('保存しました');return;}
+  if(editId){const p=store.posts.find(x=>x.id===editId);if(p){p.theme=theme;p.fmt=FMT;p.cap=cap;p.when=when;p.img=PHOTO;p.tags=TAGSEL.slice();}save();closeOv();render();toast('保存しました');return;}
   const id=Math.max(0,...store.posts.map(p=>p.id))+1;
-  store.posts.push({id,theme,cap,when,posted:false,img:PHOTO,reach:0,saves:0,tags:TAGSEL.slice()});
+  store.posts.push({id,theme,fmt:FMT,cap,when,posted:false,img:PHOTO,reach:0,saves:0,tags:TAGSEL.slice()});
   save();closeOv();go('sched');toast('予約しました🌱 続けていきましょう');
 }
 let tT;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2000);}
