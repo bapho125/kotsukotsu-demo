@@ -119,6 +119,23 @@
   .demo{font-size:10.5px;color:var(--mut);font-weight:700;text-align:center;line-height:1.6;margin-top:18px;padding:0 10px}
   .toast{position:fixed;bottom:150px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;font-size:13px;font-weight:700;opacity:0;transition:.3s;z-index:60;pointer-events:none;max-width:90%;text-align:center}
   .toast.show{opacity:1}
+  /* ===== PC（広い画面）= 横並びダッシュボードで"より便利"に ===== */
+  @media(min-width:900px){
+    body{background:#EBE1D0}
+    .phone{max-width:1080px;background:var(--bg);min-height:auto;margin:26px auto;border-radius:28px;box-shadow:0 22px 64px rgba(92,64,44,.16)}
+    .scr{padding:26px 32px 40px}
+    .tabbar{display:none}
+    .addbtn{display:none!important}
+    .dtop{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+    .addbtn-pc{background:var(--acc);color:#fff;border:none;font-family:inherit;font-weight:800;font-size:15px;padding:13px 24px;border-radius:999px;box-shadow:0 8px 20px rgba(224,121,94,.4);cursor:pointer;display:flex;align-items:center;gap:7px}
+    .addbtn-pc:active{transform:scale(.97)}
+    .dash{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+    .dcol{min-width:0}
+    .dlabel{font-size:13px;font-weight:800;color:var(--acc2);margin-bottom:13px;display:flex;align-items:center;gap:7px;letter-spacing:.03em;border-bottom:1px solid var(--line);padding-bottom:10px}
+    .dcol .sechead:first-of-type{margin-top:6px}
+    .ov{align-items:center}
+    .sheet{border-radius:24px;max-width:480px;margin:0 16px;max-height:88vh}
+  }
 </style>
 </head>
 <body>
@@ -209,17 +226,26 @@ function thisWeekCount(){const wk=weekKey(TODAY);return store.posts.filter(p=>we
 
 function go(t){tab=t;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   document.getElementById('addbtn').style.display=t==='sched'?'flex':'none';render();}
-function render(){const m=document.getElementById('scr');tab==='sched'?renderSched(m):renderGrow(m);}
+function isWide(){return window.innerWidth>=900;}
+function render(){const m=document.getElementById('scr');if(isWide())renderDash(m);else if(tab==='sched')renderSched(m);else renderGrow(m);}
+function renderDash(m){
+  m.innerHTML=`<div class="view">
+    <div class="dtop"><div class="top" style="margin:0"><div class="av" style="background-image:url('${store.shop.avatar}')"></div>
+      <div><div class="hi">こんにちは</div><div class="shop">${esc(store.shop.name)}さん</div></div></div>
+      <button class="addbtn-pc" onclick="openPost()"><span style="font-size:17px">＋</span> 投稿を予約する</button></div>
+    <div class="dash">
+      <div class="dcol"><div class="dlabel">📅 予約・続ける</div>${schedBody()}</div>
+      <div class="dcol"><div class="dlabel">🌱 のび・見つけてもらう</div>${growBody()}</div>
+    </div>
+    <div class="demo">これはデモ（サンプル）です。データはすべて架空で、実際の投稿は行いません。「コツコツ」＝続けられて、新しい人に見つけてもらえる、お店のSNSの相棒。御社向けに作ります。— Karakuri</div></div>`;
+}
+let _rt;window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,160);});
 
-function renderSched(m){
+function schedBody(){
   const up=store.posts.filter(p=>!p.posted).sort((a,b)=>a.when<b.when?-1:1);
   const done=store.posts.filter(p=>p.posted).sort((a,b)=>a.when<b.when?1:-1);
   const next=up[0],st=streakWeeks(),wc=thisWeekCount(),left=Math.max(0,WEEK_GOAL-wc);
-  let h=`<div class="view">
-    <div class="top"><div class="av" style="background-image:url('${store.shop.avatar}')"></div>
-      <div><div class="hi">こんにちは</div><div class="shop">${esc(store.shop.name)}さん</div></div></div>`;
-  // keep-going
-  h+=`<div class="keep"><div class="row">
+  let h=`<div class="keep"><div class="row">
       <div><div class="streak"><span class="f">🔥</span>${st}週 連続</div><div class="sub">コツコツ続いています</div></div>
       <div style="text-align:right"><div class="pace">${[0,1,2].map(i=>`<span class="dot ${i<wc?'on':''}"></span>`).join('')}</div><div class="sub" style="margin-top:5px">今週 ${wc}/${WEEK_GOAL}回</div></div>
     </div>
@@ -234,8 +260,14 @@ function renderSched(m){
   h+= up.length>1 ? up.slice(1).map(p=>itemRow(p,false)).join('') : `<div class="empty">この先の予約はあと1件。<br>続けて1本、予約しておきましょう。</div>`;
   h+=`<div class="sechead">出した投稿 <span class="c">${done.length}件</span></div>`;
   h+= done.slice(0,6).map(p=>itemRow(p,true)).join('');
-  h+=`<div class="demo">これはデモ（サンプル）です。データはすべて架空で、実際の投稿は行いません。<br>「コツコツ」＝続けられて、新しい人に見つけてもらえる、お店のSNSの相棒。御社向けに作ります。— Karakuri</div></div>`;
-  m.innerHTML=h;
+  return h;
+}
+function renderSched(m){
+  m.innerHTML=`<div class="view">
+    <div class="top"><div class="av" style="background-image:url('${store.shop.avatar}')"></div>
+      <div><div class="hi">こんにちは</div><div class="shop">${esc(store.shop.name)}さん</div></div></div>
+    ${schedBody()}
+    <div class="demo">これはデモ（サンプル）です。データはすべて架空で、実際の投稿は行いません。<br>「コツコツ」＝続けられて、新しい人に見つけてもらえる、お店のSNSの相棒。御社向けに作ります。— Karakuri</div></div>`;
 }
 function itemRow(p,isDone){
   return `<div class="item" onclick="openPost(${p.id})">
@@ -245,17 +277,13 @@ function itemRow(p,isDone){
   </div>`;
 }
 
-function renderGrow(m){
+function growBody(){
   const s=store.snaps,last=s[s.length-1].foll,first=s[0].foll,gain=last-first;
   const monthStart=s.find(x=>x.d>='2026-06-01')||s[0],mGain=last-monthStart.foll;
   const posted=store.posts.filter(p=>p.posted),top=[...posted].sort((a,b)=>b.reach-a.reach).slice(0,3);
   const totalReach=posted.reduce((a,p)=>a+p.reach,0),st=streakWeeks();
-  // ざっくり「新しく届いた人」＝リーチ合計のうち概算（デモ）
-  const newReach=Math.round(totalReach*0.46);
-  let h=`<div class="view">
-    <div class="top"><div class="av" style="background-image:url('${store.shop.avatar}')"></div>
-      <div><div class="hi">${store.shop.handle}</div><div class="shop">のび、見てみましょう</div></div></div>
-    <div class="bignum"><div><span class="n">${fmtNum(last)}</span><span class="u">フォロワー</span></div>
+  const newReach=Math.round(totalReach*0.46); // 新しく届いた人＝リーチ概算（デモ）
+  let h=`<div class="bignum"><div><span class="n">${fmtNum(last)}</span><span class="u">フォロワー</span></div>
       <div class="d">🌱 今月 +${fmtNum(mGain)}人</div><div class="cap">この2か月で +${fmtNum(gain)}人。${st}週続けた成果です。</div></div>
     <div class="twocard">
       <div class="mini"><div class="me">👀</div><div class="mn">${fmtNum(newReach)}</div><div class="ml">新しく届いた人<br>（フォロワー以外）</div></div>
@@ -272,8 +300,14 @@ function renderGrow(m){
   const bestT=top.length?timeWord(new Date(top[0].when).getHours()):'おひる';
   h+=`<div class="insight"><span class="e">🌱</span> 「${bestT}」の投稿が、よく見られています。次もその時間に出してみましょう。
     <button class="actbtn" onclick="quickFrom('${bestT}')">「${bestT}」にもう1本、予約する →</button></div>`;
-  h+=`<div class="demo">これはデモ（サンプル）です。数字はすべて架空です。本番ではInstagramの実データを表示します。— Karakuri</div></div>`;
-  m.innerHTML=h;
+  return h;
+}
+function renderGrow(m){
+  m.innerHTML=`<div class="view">
+    <div class="top"><div class="av" style="background-image:url('${store.shop.avatar}')"></div>
+      <div><div class="hi">${store.shop.handle}</div><div class="shop">のび、見てみましょう</div></div></div>
+    ${growBody()}
+    <div class="demo">これはデモ（サンプル）です。数字はすべて架空です。本番ではInstagramの実データを表示します。— Karakuri</div></div>`;
 }
 function lineChart(s){
   const W=380,H=120,pad=8,vals=s.map(x=>x.foll),mn=Math.min(...vals),mx=Math.max(...vals);
